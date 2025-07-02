@@ -25,10 +25,12 @@ import {
   AlertTriangle,
   CheckCircle,
   TrendingUp,
-  Activity
+  Activity,
+  MessageSquare
 } from 'lucide-react';
 import { PackageDetails as PackageDetailsType } from '../types/npm';
 import { NPMApiService } from '../services/npmApi';
+import RealWorldDiscussions from './RealWorldDiscussions';
 
 interface PackageDetailsProps {
   packageName: string;
@@ -40,7 +42,7 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'versions' | 'readme'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'versions' | 'readme' | 'discussions'>('overview');
 
   useEffect(() => {
     const fetchPackageDetails = async () => {
@@ -152,7 +154,8 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
     { id: 'overview', label: 'Overview', icon: FileText },
     { id: 'dependencies', label: 'Dependencies', icon: GitBranch },
     { id: 'versions', label: 'Versions', icon: Tag },
-    { id: 'readme', label: 'README', icon: Code }
+    { id: 'readme', label: 'README', icon: Code },
+    { id: 'discussions', label: 'Discussions', icon: MessageSquare }
   ];
 
   const latestVersionData = packageDetails.version ? packageDetails.versions[packageDetails.version] : null;
@@ -590,6 +593,10 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
                       </div>
                     )}
                   </div>
+                )}
+
+                {activeTab === 'discussions' && (
+                  <RealWorldDiscussions packageName={packageDetails.name} />
                 )}
               </div>
             </div>
