@@ -379,7 +379,7 @@ Or paste package.json dependencies:
                                     <span
                                       key={severity}
                                       className={`px-1 py-0.5 rounded text-xs border ${SecurityApiService.getSeverityColor(severity)}`}
-                                      title={`${count} ${severity.toLowerCase()} severity`}
+                                      title={`${count} ${severity} severity`}
                                     >
                                       {SecurityApiService.getSeverityIcon(severity)} {count}
                                     </span>
