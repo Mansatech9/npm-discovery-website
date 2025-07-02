@@ -41,8 +41,18 @@ export interface EnhancedSearchResult {
 }
 
 export class BonsaiApiService {
-  private static readonly BONSAI_URL = 'https://tk57ldrt5a:zx1x6ny91i@npm-discovery-3909985304.us-east-1.bonsaisearch.net:443';
+  private static readonly BONSAI_BASE_URL = 'https://npm-discovery-3909985304.us-east-1.bonsaisearch.net:443';
+  private static readonly BONSAI_USERNAME = 'tk57ldrt5a';
+  private static readonly BONSAI_PASSWORD = 'zx1x6ny91i';
   private static readonly INDEX_NAME = 'npm-packages';
+
+  private static getAuthHeaders(): HeadersInit {
+    const credentials = btoa(`${this.BONSAI_USERNAME}:${this.BONSAI_PASSWORD}`);
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${credentials}`
+    };
+  }
 
   static async searchPackages(query: string, size: number = 20, from: number = 0): Promise<BonsaiSearchResponse> {
     try {
@@ -63,11 +73,9 @@ export class BonsaiApiService {
         ]
       };
 
-      const response = await fetch(`${this.BONSAI_URL}/${this.INDEX_NAME}/_search`, {
+      const response = await fetch(`${this.BONSAI_BASE_URL}/${this.INDEX_NAME}/_search`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(searchBody)
       });
 
@@ -131,11 +139,9 @@ export class BonsaiApiService {
         }
       };
 
-      const response = await fetch(`${this.BONSAI_URL}/${this.INDEX_NAME}/_search`, {
+      const response = await fetch(`${this.BONSAI_BASE_URL}/${this.INDEX_NAME}/_search`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(searchBody)
       });
 
@@ -187,11 +193,9 @@ export class BonsaiApiService {
 
   static async checkIndexHealth(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.BONSAI_URL}/_cluster/health`, {
+      const response = await fetch(`${this.BONSAI_BASE_URL}/_cluster/health`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
