@@ -19,6 +19,8 @@ export class EnhancedSearchApiService {
 
       // Step 2: Use AI to rewrite the query semantically
       const rewrittenQuery = await this.rewriteQueryWithAI(originalQuery);
+      console.log('Original query:', originalQuery);
+      console.log('Rewritten query:', rewrittenQuery);
       
       // Step 3: Search Bonsai with the enhanced query
       const bonsaiResponse = await BonsaiApiService.searchWithSemanticQuery(
@@ -30,11 +32,14 @@ export class EnhancedSearchApiService {
       // Step 4: Convert Bonsai results to NPM format
       const packages = BonsaiApiService.convertBonsaiToNPMFormat(bonsaiResponse.hits.hits);
 
-      // Step 5: Enhance with NPM registry data if needed
-      const enhancedPackages = await this.enhanceWithNPMData(packages);
+      // Step 5: If no results from Bonsai, try NPM as fallback
+      if (packages.length === 0) {
+        console.log('No Bonsai results, trying NPM fallback');
+        return this.fallbackToNPMSearch(originalQuery, size, from);
+      }
 
       return {
-        packages: enhancedPackages,
+        packages,
         total: bonsaiResponse.hits.total.value,
         source: 'bonsai',
         rewrittenQuery
@@ -48,23 +53,37 @@ export class EnhancedSearchApiService {
 
   private static async rewriteQueryWithAI(originalQuery: string): Promise<string> {
     try {
-      const prompt = `You are a smart search assistant that rewrites a user's natural language query into a precise semantic search query for finding npm packages.
+      const prompt = `You are a smart search assistant for npm packages. Transform the user's query into search terms that will find relevant packages.
 
-Transform the user's query to include:
-- Synonyms and related terms
-- Technical keywords
-- Common package naming patterns
-- Related technologies and frameworks
+Rules:
+1. Include the original terms
+2. Add synonyms and related technical terms
+3. Include common package naming patterns
+4. Add related technologies
+5. Separate terms with spaces (not commas)
+6. Keep it concise and focused
 
-User's original query: "${originalQuery}"
+Examples:
+- "react print" → "react print printing react-to-print jspdf html2canvas pdf browser-print"
+- "chart library" → "chart charting visualization graph plot d3 canvas svg data"
+- "http client" → "http https request client fetch axios ajax api rest"
 
-Respond with ONLY the rewritten search query, no explanations or additional text.`;
+User query: "${originalQuery}"
+
+Respond with ONLY the enhanced search terms separated by spaces:`;
 
       const result = await GeminiApiService.model.generateContent(prompt);
       const response = await result.response;
-      const rewrittenQuery = response.text().trim();
+      let rewrittenQuery = response.text().trim();
 
-      // Fallback to original query if AI fails
+      // Clean up the response - remove quotes and extra formatting
+      rewrittenQuery = rewrittenQuery
+        .replace(/['"]/g, '')
+        .replace(/\n/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Fallback to original query if AI fails or returns empty
       return rewrittenQuery || originalQuery;
     } catch (error) {
       console.warn('AI query rewriting failed, using original query:', error);
