@@ -147,7 +147,8 @@ export class SecurityApiService {
   }
 
   static getSeverityColor(severity: string): string {
-    switch (severity.toUpperCase()) {
+    const severityStr = String(severity || '').toUpperCase();
+    switch (severityStr) {
       case 'CRITICAL':
         return 'text-red-400 bg-red-500/20 border-red-500/30';
       case 'HIGH':
@@ -162,7 +163,8 @@ export class SecurityApiService {
   }
 
   static getSeverityIcon(severity: string): string {
-    switch (severity.toUpperCase()) {
+    const severityStr = String(severity || '').toUpperCase();
+    switch (severityStr) {
       case 'CRITICAL':
         return '🔴';
       case 'HIGH':
