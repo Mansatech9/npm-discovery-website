@@ -38,7 +38,7 @@ export interface SecurityAnalysisResponse {
 
 export class GeminiApiService {
   private static genAI = new GoogleGenerativeAI(API_KEY);
-  private static model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  static model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   static async generateSnippet(request: SnippetRequest): Promise<SnippetResponse> {
     try {
@@ -95,6 +95,37 @@ export class GeminiApiService {
         overallRiskLevel: 'MEDIUM',
         error: error instanceof Error ? error.message : 'Failed to analyze security scan'
       };
+    }
+  }
+
+  static async rewriteSearchQuery(originalQuery: string): Promise<string> {
+    try {
+      const prompt = `You are a smart search assistant that rewrites a user's natural language query into a precise semantic search query for finding npm packages.
+
+Transform the user's query to include:
+- Synonyms and related terms
+- Technical keywords  
+- Common package naming patterns
+- Related technologies and frameworks
+- Alternative spellings and variations
+
+Examples:
+- "chart library" → "chart charting visualization graph plot d3 canvas svg data visualization"
+- "http client" → "http https request client fetch axios ajax api rest"
+- "date utility" → "date time moment dayjs datetime calendar timezone format parse"
+
+User's original query: "${originalQuery}"
+
+Respond with ONLY the enhanced search query, no explanations.`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const rewrittenQuery = response.text().trim();
+
+      return rewrittenQuery || originalQuery;
+    } catch (error) {
+      console.warn('Query rewriting failed:', error);
+      return originalQuery;
     }
   }
 

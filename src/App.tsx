@@ -4,7 +4,7 @@ import SearchResults from './components/SearchResults';
 import PackageDetails from './components/PackageDetails';
 import SecurityScan from './components/SecurityScan';
 import { NPMPackage } from './types/npm';
-import { NPMApiService } from './services/npmApi';
+import { EnhancedSearchApiService } from './services/enhancedSearchApi';
 
 type AppState = 'search' | 'results' | 'details' | 'security';
 
@@ -12,6 +12,8 @@ function App() {
   const [currentState, setCurrentState] = useState<AppState>('search');
   const [packages, setPackages] = useState<NPMPackage[]>([]);
   const [currentQuery, setCurrentQuery] = useState('');
+  const [rewrittenQuery, setRewrittenQuery] = useState('');
+  const [searchSource, setSearchSource] = useState<'npm' | 'bonsai' | 'hybrid'>('npm');
   const [totalPackages, setTotalPackages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<string>('');
@@ -24,10 +26,12 @@ function App() {
       setCurrentQuery(query);
       setCurrentPage(0);
       
-      const response = await NPMApiService.searchPackages(query, 20);
-      setPackages(response.objects);
+      const response = await EnhancedSearchApiService.searchWithAI(query, 20);
+      setPackages(response.packages);
       setTotalPackages(response.total);
-      setHasMore(response.objects.length === 20);
+      setSearchSource(response.source);
+      setRewrittenQuery(response.rewrittenQuery || '');
+      setHasMore(response.packages.length === 20);
       setCurrentState('results');
     } catch (error) {
       console.error('Search failed:', error);
@@ -40,15 +44,15 @@ function App() {
     try {
       setIsLoading(true);
       const nextPage = currentPage + 1;
-      const response = await NPMApiService.searchPackages(
+      const response = await EnhancedSearchApiService.searchWithAI(
         currentQuery, 
         20, 
         nextPage * 20
       );
       
-      setPackages(prev => [...prev, ...response.objects]);
+      setPackages(prev => [...prev, ...response.packages]);
       setCurrentPage(nextPage);
-      setHasMore(response.objects.length === 20);
+      setHasMore(response.packages.length === 20);
     } catch (error) {
       console.error('Load more failed:', error);
     } finally {
@@ -65,6 +69,7 @@ function App() {
     setCurrentState('search');
     setPackages([]);
     setCurrentQuery('');
+    setRewrittenQuery('');
     setTotalPackages(0);
     setCurrentPage(0);
     setHasMore(true);
@@ -97,6 +102,8 @@ function App() {
         <SearchResults
           packages={packages}
           query={currentQuery}
+          rewrittenQuery={rewrittenQuery}
+          searchSource={searchSource}
           total={totalPackages}
           isLoading={isLoading}
           onBack={handleBackToSearch}

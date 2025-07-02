@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Filter, SortDesc, Package2, X, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Filter, SortDesc, Package2, X, ChevronDown, Sparkles, Zap, Database } from 'lucide-react';
 import { NPMPackage } from '../types/npm';
 import PackageCard from './PackageCard';
 
 interface SearchResultsProps {
   packages: NPMPackage[];
   query: string;
+  rewrittenQuery?: string;
+  searchSource?: 'npm' | 'bonsai' | 'hybrid';
   total: number;
   isLoading: boolean;
   onBack: () => void;
@@ -20,6 +22,8 @@ type FilterOption = 'all' | 'high-quality' | 'popular' | 'well-maintained';
 const SearchResults: React.FC<SearchResultsProps> = ({
   packages,
   query,
+  rewrittenQuery,
+  searchSource = 'npm',
   total,
   isLoading,
   onBack,
@@ -68,12 +72,46 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     return filtered;
   }, [packages, sortBy, filterBy]);
 
+  const getSearchSourceIcon = () => {
+    switch (searchSource) {
+      case 'bonsai':
+        return <Zap className="h-4 w-4 text-purple-400" />;
+      case 'hybrid':
+        return <Database className="h-4 w-4 text-blue-400" />;
+      default:
+        return <Package2 className="h-4 w-4 text-slate-400" />;
+    }
+  };
+
+  const getSearchSourceLabel = () => {
+    switch (searchSource) {
+      case 'bonsai':
+        return 'Enhanced AI Search';
+      case 'hybrid':
+        return 'Hybrid Search';
+      default:
+        return 'NPM Registry';
+    }
+  };
+
+  const getSearchSourceColor = () => {
+    switch (searchSource) {
+      case 'bonsai':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'hybrid':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      default:
+        return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    }
+  };
+
   if (isLoading && packages.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-300 text-lg">Searching NPM registry...</p>
+          <p className="text-slate-300 text-lg">Searching with AI enhancement...</p>
+          <p className="text-slate-500 text-sm mt-2">Rewriting query and searching multiple sources</p>
         </div>
       </div>
     );
@@ -95,10 +133,27 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               </button>
               <div className="h-6 border-l border-slate-600"></div>
               <div>
-                <h1 className="text-2xl font-bold text-white">Search Results</h1>
-                <p className="text-slate-400">
-                  Found <span className="font-semibold text-purple-400">{total.toLocaleString()}</span> packages for "{query}"
-                </p>
+                <div className="flex items-center space-x-3 mb-2">
+                  <h1 className="text-2xl font-bold text-white">Search Results</h1>
+                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs border ${getSearchSourceColor()}`}>
+                    {getSearchSourceIcon()}
+                    <span>{getSearchSourceLabel()}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-slate-400">
+                    Found <span className="font-semibold text-purple-400">{total.toLocaleString()}</span> packages for "{query}"
+                  </p>
+                  {rewrittenQuery && rewrittenQuery !== query && (
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Sparkles className="h-4 w-4 text-purple-400" />
+                      <span className="text-slate-500">AI enhanced query:</span>
+                      <span className="text-purple-300 font-mono text-xs bg-purple-500/10 px-2 py-1 rounded border border-purple-500/20">
+                        {rewrittenQuery}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -189,6 +244,21 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     </button>
                   </span>
                 )}
+              </div>
+            )}
+
+            {/* Search Enhancement Notice */}
+            {searchSource === 'bonsai' && (
+              <div className="mb-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4">
+                <div className="flex items-center space-x-3">
+                  <Sparkles className="h-5 w-5 text-purple-400" />
+                  <div>
+                    <h4 className="text-sm font-medium text-purple-300">Enhanced AI Search Active</h4>
+                    <p className="text-purple-200 text-xs">
+                      Results powered by semantic search and AI query enhancement for better relevance
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
