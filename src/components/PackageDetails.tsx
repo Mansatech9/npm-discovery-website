@@ -26,11 +26,13 @@ import {
   CheckCircle,
   TrendingUp,
   Activity,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import { PackageDetails as PackageDetailsType } from '../types/npm';
 import { NPMApiService } from '../services/npmApi';
 import RealWorldDiscussions from './RealWorldDiscussions';
+import SnippetGenerator from './SnippetGenerator';
 
 interface PackageDetailsProps {
   packageName: string;
@@ -42,7 +44,7 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'versions' | 'readme' | 'discussions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'versions' | 'readme' | 'discussions' | 'snippets'>('overview');
 
   useEffect(() => {
     const fetchPackageDetails = async () => {
@@ -152,6 +154,7 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FileText },
+    { id: 'snippets', label: 'AI Snippets', icon: Sparkles },
     { id: 'dependencies', label: 'Dependencies', icon: GitBranch },
     { id: 'versions', label: 'Versions', icon: Tag },
     { id: 'readme', label: 'README', icon: Code },
@@ -426,6 +429,11 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
                     >
                       <tab.icon className="h-4 w-4" />
                       <span>{tab.label}</span>
+                      {tab.id === 'snippets' && (
+                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                          AI
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -485,6 +493,13 @@ const PackageDetails: React.FC<PackageDetailsProps> = ({ packageName, onBack }) 
                       </div>
                     )}
                   </div>
+                )}
+
+                {activeTab === 'snippets' && (
+                  <SnippetGenerator 
+                    packageName={packageDetails.name} 
+                    readme={packageDetails.readme}
+                  />
                 )}
 
                 {activeTab === 'dependencies' && (
