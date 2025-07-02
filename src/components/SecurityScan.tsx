@@ -14,10 +14,12 @@ import {
   Clock,
   AlertCircle,
   XCircle,
-  Loader
+  Loader,
+  Brain
 } from 'lucide-react';
 import { VulnerabilityResult, ScanSummary } from '../types/security';
 import { SecurityApiService } from '../services/securityApi';
+import SecurityAnalysis from './SecurityAnalysis';
 
 interface SecurityScanProps {
   onBack: () => void;
@@ -29,6 +31,7 @@ const SecurityScan: React.FC<SecurityScanProps> = ({ onBack }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanSummary, setScanSummary] = useState<ScanSummary | null>(null);
   const [copiedResults, setCopiedResults] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   const handleScan = async () => {
     if (!input.trim()) return;
@@ -36,6 +39,7 @@ const SecurityScan: React.FC<SecurityScanProps> = ({ onBack }) => {
     setIsScanning(true);
     setResults([]);
     setScanSummary(null);
+    setShowAnalysis(false);
 
     try {
       const packages = SecurityApiService.parsePackageInput(input);
@@ -174,6 +178,10 @@ const SecurityScan: React.FC<SecurityScanProps> = ({ onBack }) => {
     return 'bg-green-500/10 border-green-500/20';
   };
 
+  const hasVulnerabilities = results.some(result => 
+    result.vulnerabilities.length > 0 || result.deprecated
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -278,6 +286,42 @@ Or paste package.json dependencies:
               <div className="text-2xl font-bold text-red-400">{scanSummary.criticalSeverityCount}</div>
               <div className="text-sm text-slate-400">Critical</div>
             </div>
+          </div>
+        )}
+
+        {/* AI Analysis Button */}
+        {results.length > 0 && hasVulnerabilities && !showAnalysis && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Brain className="h-6 w-6 text-purple-400" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Get AI Security Analysis</h3>
+                    <p className="text-slate-400 text-sm">
+                      Let AI explain vulnerabilities, suggest fixes, and summarize risks
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAnalysis(true)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg transition-all font-medium flex items-center space-x-2 shadow-lg hover:shadow-purple-500/25"
+                >
+                  <Brain className="h-5 w-5" />
+                  <span>Analyze with AI</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Analysis Section */}
+        {showAnalysis && (
+          <div className="mb-8">
+            <SecurityAnalysis 
+              scanResults={results} 
+              onClose={() => setShowAnalysis(false)}
+            />
           </div>
         )}
 
