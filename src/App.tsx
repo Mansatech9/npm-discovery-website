@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import SearchInterface from './components/SearchInterface';
 import SearchResults from './components/SearchResults';
 import PackageDetails from './components/PackageDetails';
+import SecurityScan from './components/SecurityScan';
 import { NPMPackage } from './types/npm';
 import { NPMApiService } from './services/npmApi';
 
-type AppState = 'search' | 'results' | 'details';
+type AppState = 'search' | 'results' | 'details' | 'security';
 
 function App() {
   const [currentState, setCurrentState] = useState<AppState>('search');
@@ -74,11 +75,20 @@ function App() {
     setSelectedPackage('');
   };
 
+  const handleSecurityScan = () => {
+    setCurrentState('security');
+  };
+
+  const handleBackFromSecurity = () => {
+    setCurrentState('search');
+  };
+
   return (
     <div className="min-h-screen">
       {currentState === 'search' && (
         <SearchInterface
           onSearch={handleSearch}
+          onSecurityScan={handleSecurityScan}
           isLoading={isLoading}
         />
       )}
@@ -100,6 +110,12 @@ function App() {
         <PackageDetails
           packageName={selectedPackage}
           onBack={handleBackToResults}
+        />
+      )}
+
+      {currentState === 'security' && (
+        <SecurityScan
+          onBack={handleBackFromSecurity}
         />
       )}
     </div>

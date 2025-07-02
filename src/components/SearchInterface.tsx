@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Sparkles, Code, Package, Zap, Shield, TrendingUp } from 'lucide-react';
+import { Search, Sparkles, Code, Package, Zap, Shield, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface SearchInterfaceProps {
   onSearch: (query: string) => void;
+  onSecurityScan: () => void;
   isLoading: boolean;
 }
 
-const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch, isLoading }) => {
+const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch, onSecurityScan, isLoading }) => {
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,6 +73,17 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch, isLoading }
           <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-8">
             Describe what you need and discover the perfect packages with intelligent search
           </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center space-x-4 mb-12">
+          <button
+            onClick={onSecurityScan}
+            className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
+          >
+            <AlertTriangle className="h-5 w-5" />
+            <span>Security Scan</span>
+          </button>
         </div>
 
         {/* Search Form */}
