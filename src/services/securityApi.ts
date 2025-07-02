@@ -91,21 +91,107 @@ export class SecurityApiService {
 
   static parsePackageInput(input: string): PackageInput[] {
     const packages: PackageInput[] = [];
+    const trimmedInput = input.trim();
+
+    // Try to parse as JSON first (package.json format)
+    if (this.isJsonFormat(trimmedInput)) {
+      const jsonPackages = this.parsePackageJson(trimmedInput);
+      packages.push(...jsonPackages);
+    } else {
+      // Parse as plain text format
+      const textPackages = this.parseTextFormat(trimmedInput);
+      packages.push(...textPackages);
+    }
+
+    // Filter out scoped packages (those starting with @)
+    return packages.filter(pkg => !pkg.name.startsWith('@'));
+  }
+
+  private static isJsonFormat(input: string): boolean {
+    const trimmed = input.trim();
+    return (trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+           trimmed.includes('"dependencies"') || 
+           trimmed.includes('"devDependencies"');
+  }
+
+  private static parsePackageJson(input: string): PackageInput[] {
+    const packages: PackageInput[] = [];
+
+    try {
+      // Try to parse as complete JSON
+      const parsed = JSON.parse(input);
+      
+      // Extract dependencies
+      if (parsed.dependencies) {
+        Object.entries(parsed.dependencies).forEach(([name, version]) => {
+          packages.push({ name, version: this.cleanVersion(version as string) });
+        });
+      }
+
+      // Extract devDependencies
+      if (parsed.devDependencies) {
+        Object.entries(parsed.devDependencies).forEach(([name, version]) => {
+          packages.push({ name, version: this.cleanVersion(version as string) });
+        });
+      }
+    } catch (error) {
+      // If JSON parsing fails, try to extract dependencies manually
+      const dependencyPackages = this.extractDependenciesFromText(input);
+      packages.push(...dependencyPackages);
+    }
+
+    return packages;
+  }
+
+  private static extractDependenciesFromText(input: string): PackageInput[] {
+    const packages: PackageInput[] = [];
+    const lines = input.split('\n');
+    let inDependencies = false;
+    let inDevDependencies = false;
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Check if we're entering dependencies or devDependencies section
+      if (trimmedLine.includes('"dependencies"') && trimmedLine.includes('{')) {
+        inDependencies = true;
+        inDevDependencies = false;
+        continue;
+      }
+      
+      if (trimmedLine.includes('"devDependencies"') && trimmedLine.includes('{')) {
+        inDevDependencies = true;
+        inDependencies = false;
+        continue;
+      }
+
+      // Check if we're exiting a dependencies section
+      if ((inDependencies || inDevDependencies) && (trimmedLine === '}' || trimmedLine === '},')) {
+        inDependencies = false;
+        inDevDependencies = false;
+        continue;
+      }
+
+      // Parse dependency lines
+      if ((inDependencies || inDevDependencies) && trimmedLine.includes(':')) {
+        const match = trimmedLine.match(/["']([^"']+)["']\s*:\s*["']([^"']+)["']/);
+        if (match) {
+          const [, name, version] = match;
+          packages.push({ name, version: this.cleanVersion(version) });
+        }
+      }
+    }
+
+    return packages;
+  }
+
+  private static parseTextFormat(input: string): PackageInput[] {
+    const packages: PackageInput[] = [];
     const lines = input.trim().split('\n');
 
     for (const line of lines) {
       const trimmedLine = line.trim();
       if (!trimmedLine) continue;
-
-      // Try to parse as package.json dependencies
-      if (trimmedLine.includes(':') && (trimmedLine.includes('"') || trimmedLine.includes("'"))) {
-        const match = trimmedLine.match(/["']([^"']+)["']\s*:\s*["']([^"']+)["']/);
-        if (match) {
-          const [, name, version] = match;
-          packages.push({ name, version: this.cleanVersion(version) });
-          continue;
-        }
-      }
 
       // Try to parse as package@version format
       if (trimmedLine.includes('@') && !trimmedLine.startsWith('@')) {
